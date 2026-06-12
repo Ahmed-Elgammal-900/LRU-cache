@@ -1,7 +1,7 @@
 # 🗂️ LRU Cache
 
 A TypeScript implementation of an LRU Cache using Map's native insertion-order 
-guarantee — achieving O(1) get and put without a doubly linked list.
+guarantee — achieving O(1) get and put.
 
 ## 🚨 The Real World Problem
 In any backend API, hitting the database on every 
