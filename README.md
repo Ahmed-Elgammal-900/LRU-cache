@@ -132,7 +132,10 @@ Tested with 10,000 operations per cache size using a Zipf-like skewed access pat
 ## 🚀 Run It
 
 ```bash
+# Install dependencies
 npm install
+
+# Run cache demos and benchmarks
 npm run test
 ```
 
