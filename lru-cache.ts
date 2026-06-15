@@ -15,10 +15,19 @@ export class LRUCache<Key, Value> {
     private lock = false;
     private lockQueue: Array<() => void> = [];
 
+    private sweepInterval: ReturnType<typeof setInterval> | null = null;
+
     constructor({ maxSize, ttlMs }: CacheOptions) {
         this.cache = new Map();
         this.maxSize = maxSize;
         this.ttlMs = ttlMs ?? null;
+
+        if (this.ttlMs) {
+            this.sweepInterval = setInterval(
+                () => this.purgeExpired(),
+                this.ttlMs
+            );
+        }
 
         this.head = this.createNode(null as Key, null as Value);
         this.tail = this.createNode(null as Key, null as Value);
@@ -60,6 +69,7 @@ export class LRUCache<Key, Value> {
                 this.removeNode(node);
                 this.cache.delete(key);
                 this.misses++;
+                this.evictions++;
                 return null;
             }
 
@@ -121,6 +131,7 @@ export class LRUCache<Key, Value> {
                 if (this.isExpired(node)) {
                     this.removeNode(node);
                     this.cache.delete(key);
+                    this.evictions++;
                     purged++;
                 }
             }
@@ -185,5 +196,12 @@ export class LRUCache<Key, Value> {
 
     get size(): number {
         return this.cache.size;
+    }
+
+    destroyInterval(): void {
+        if (this.sweepInterval) {
+            clearInterval(this.sweepInterval);
+            this.sweepInterval = null;
+        }
     }
 }
