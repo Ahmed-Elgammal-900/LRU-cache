@@ -55,7 +55,7 @@ export class LRUCache<Key, Value> {
         }
     }
 
-    async get(key: Key) {
+    async get(key: Key): Promise<Value | null> {
         await this.acquireLock();
         try {
             const node = this.cache.get(key);
@@ -81,7 +81,7 @@ export class LRUCache<Key, Value> {
         }
     }
 
-    async put(key: Key, value: Value) {
+    async put(key: Key, value: Value): Promise<void> {
         await this.acquireLock();
         try {
             const existing = this.cache.get(key);
