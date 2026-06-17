@@ -130,10 +130,10 @@ Tested with 10,000 operations per cache size using a power-law skewed access pat
 
 | Cache Size | Hit Rate   |
 | ---------- | ---------- |
-| 10         | 4.72%      |
-| 50         | 19.05%     |
-| 100        | 32.04%     |
-| 200        | 53.70%     |
+| 10         | 4.58%      |
+| 50         | 18.93%     |
+| 100        | 32.19%     |
+| 200        | 52.06%     |
 | **500**    | **95.00%** |
 
 > At capacity 500, the cache achieves a **95% hit rate** — meaning 9,500 out of 10,000 requests are served from memory with no database call needed.
@@ -147,11 +147,11 @@ means fewer expensive `put()` calls.
 
 | Cache Size | Ops/sec       | Hit Rate |
 | ---------- | ------------- | -------- |
-| 10         | 2,442,066     | 4.70%    |
-| 50         | 2,594,463     | 18.71%   |
-| 100        | 3,010,336     | 31.81%   |
-| 200        | 3,538,558     | 53.14%   |
-| **500**    | **5,455,341** | 100.00%  |
+| 10         | 2,649,164     | 4.75%    |
+| 50         | 2,762,875     | 18.77%   |
+| 100        | 2,816,838     | 31.77%   |
+| 200        | 3,389,762     | 53.05%   |
+| **500**    | **5,152,775** | 100.00%  |
 
 > Raw throughput measured without async mutex overhead. Async `LRUCache` ops/sec will be lower (~500K) due to Node.js Promise scheduling.
 
