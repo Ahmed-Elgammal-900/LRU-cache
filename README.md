@@ -10,7 +10,7 @@ Achieves O(1) `get` and `put` using a HashMap + Doubly Linked List.
 
 In any backend API, hitting the database on every request is slow and expensive. We need a smarter way to store frequently accessed data in memory and automatically remove data that hasn't been used recently.
 
-This is exactly how Redis works under the hood — and how I used it in my SaaS project to reduce database calls significantly.
+This architecture mirrors how Redis works under the hood, a strategy I implemented in my SaaS project to reduce database calls significantly.
 
 ---
 
@@ -30,7 +30,7 @@ Built with a **HashMap + Doubly Linked List** for true O(1) on all operations:
 
 - **HashMap** → O(1) key lookup
 - **Doubly Linked List** → O(1) insertion, deletion, and eviction
-  Sentinel head/tail nodes remove all edge cases from pointer manipulation. They are never evaluated for TTL expiry — only real data nodes are checked on `get()`.
+  Sentinel head/tail nodes remove all edge cases from pointer manipulation. They are never evaluated for TTL expiry, as only real data nodes are checked during a `get()` operation.
 
 ---
 
@@ -38,7 +38,7 @@ Built with a **HashMap + Doubly Linked List** for true O(1) on all operations:
 
 ### 1. Generic Typing `LRUCache<Key, Value>`
 
-Works with any key/value types — no hardcoded types.
+Works with any key and value types, avoiding hardcoded definitions entirely.
 
 ```typescript
 const sessionCache = new LRUCache<string, User>({ maxSize: 100 });
@@ -47,7 +47,7 @@ const productCache = new LRUCache<number, Product>({ maxSize: 500 });
 
 ### 2. TTL Expiry
 
-Keys automatically expire after N milliseconds — exactly how Redis TTL works.
+Keys automatically expire after N milliseconds, mimicking the exact behavior of Redis TTL.
 
 ```typescript
 const cache = new LRUCache<string, string>({ maxSize: 100, ttlMs: 5000 });
@@ -61,7 +61,7 @@ await cache.get('session:user1'); // → null (expired)
 
 An async mutex lock queue ensures concurrent operations never corrupt cache state.
 
-All public methods (`get`, `put`, `delete`, `purgeExpired`) are `async` — always `await` them.
+All public methods (`get`, `put`, `delete`, `purgeExpired`) are `async` and must always be invoked with `await`
 
 ```typescript
 // Pre-populate keys first, then read concurrently
@@ -69,9 +69,9 @@ for (let i = 0; i < 10; i++) {
     await cache.put(`key:${i}`, i * 10);
 }
 
-// 50 simultaneous reads — no race conditions, guaranteed hits
+// 50 simultaneous reads with zero race conditions and guaranteed hits
 const reads = Array.from({ length: 50 }, (_, i) => cache.get(`key:${i % 10}`));
-await Promise.all(reads); // ✅ safe — hits:50, hitRate:100%
+await Promise.all(reads); // ✅ safe (50 hits, 100% hit rate)
 ```
 
 ### 4. Manual Deletion & Expiry Purge
@@ -82,7 +82,7 @@ Explicitly remove a single key or sweep all expired keys at once.
 // Remove a specific key
 await cache.delete('session:user1'); // → true if existed, false if not
 
-// Sweep all TTL-expired keys in one pass — useful on a periodic timer
+// Sweep all TTL-expired keys in one pass, making it ideal for a periodic timer
 const purged = await cache.purgeExpired(); // → number of keys removed
 console.log(`Purged ${purged} expired entries`);
 ```
@@ -107,24 +107,25 @@ cache.getStats(); // → { hits: 0, misses: 0, hitRate: 0, evictions: 0, size: 5
 ### GET
 
 ```
-→ key not found?          miss++, return null
-→ key expired (TTL)?      delete node, miss++, return null
-→ key found?              move to front (MRU), hit++, return value
+→ key not found?       miss++, return null
+→ key expired (TTL)?   delete node, miss++, return null
+→ key found?           move to front (MRU), hit++, return value
+
 ```
 
 ### PUT
 
 ```
-→ key exists?             update value, refresh TTL, move to front
-→ cache full?             evict tail node (LRU), evictions++
-→ new key?                insert at front (MRU position)
+→ key exists?          update value, refresh TTL, move to front
+→ cache full?          evict tail node (LRU), evictions++
+→ new key?             insert at front (MRU position)
 ```
 
 ---
 
 ## 📊 Benchmark Results
 
-### A — Hit Rate vs Cache Size
+### A - Hit Rate vs Cache Size
 
 Tested with 10,000 operations per cache size using a power-law skewed access pattern (Math.pow(random, 2)) (cold start, no pre-warming):
 
@@ -136,14 +137,11 @@ Tested with 10,000 operations per cache size using a power-law skewed access pat
 | 200        | 52.06%     |
 | **500**    | **95.00%** |
 
-> At capacity 500, the cache achieves a **95% hit rate** — meaning 9,500 out of 10,000 requests are served from memory with no database call needed.
+> At capacity 500, the cache achieves a **95% hit rate**, meaning 9,500 out of 10,000 requests are served from memory with no database call needed.
 
-### B — Raw Throughput
+### B - Raw Throughput
 
-Tested with 500,000 operations per cache size (median of 3 runs)
-using the actual async LRUCache with a JIT pre-warmup pass.
-Ops/sec rises monotonically with cache size because a higher hit rate
-means fewer expensive `put()` calls.
+Tested with 500,000 operations per cache size (median of 3 runs) using the actual async LRUCache with a JIT pre-warmup pass. Ops/sec rises monotonically with cache size because a higher hit rate means fewer expensive `put()` calls.
 
 | Cache Size | Ops/sec       | Hit Rate |
 | ---------- | ------------- | -------- |
@@ -161,11 +159,11 @@ means fewer expensive `put()` calls.
 
 | Operation         | Time | Space | Notes                                 |
 | ----------------- | ---- | ----- | ------------------------------------- |
-| `get(key)`        | O(1) | —     | Moves accessed node to front          |
-| `put(key, value)` | O(1) | —     | Evicts oldest node if full            |
-| `delete(key)`     | O(1) | —     | Async. Removes item directly          |
-| `purgeExpired()`  | O(n) | —     | Async. Iterates over entire cache map |
-| Overall           | —    | O(n)  | Space scales with maxSize             |
+| `get(key)`        | O(1) | -     | Moves accessed node to front          |
+| `put(key, value)` | O(1) | -     | Evicts oldest node if full            |
+| `delete(key)`     | O(1) | -     | Async. Removes item directly          |
+| `purgeExpired()`  | O(n) | -     | Async. Iterates over entire cache map |
+| Overall           | -    | O(n)  | Space scales with maxSize             |
 
 ---
 
@@ -177,6 +175,7 @@ npm install
 
 # Run cache demos and benchmarks
 npm run test
+
 ```
 
 ---
